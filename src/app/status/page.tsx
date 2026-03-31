@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getCurrentWeekDays } from "@/lib/utils"; // 1. 임포트 추가
+import { getCurrentWeekDays } from "@/lib/utils";
 import Link from "next/link";
 
-// 달력 Y축에 출력될 전체 타임슬롯 정의
 const ALL_SLOTS = [
   { time: "10:00~12:00", isWeekendOnly: true },
   { time: "12:00~14:00", isWeekendOnly: true },
@@ -21,37 +20,39 @@ export default function StatusPage() {
   const [cancelPassword, setCancelPassword] = useState("");
 
   useEffect(() => {
-    // 2. 초기 렌더링 시 이번 주 날짜 세팅 및 예약 데이터 호출
     setCurrentWeekDays(getCurrentWeekDays());
     fetchReservations();
   }, []);
 
   const fetchReservations = async () => {
-    const res = await fetch("/api/reservations?fieldType=B"); // 풋살장 데이터만 호출
+    // 필터 없이 모든 데이터를 가져온 후 프론트에서 처리하는 게 가장 확실합니다.
+    const res = await fetch("/api/reservations");
     if (res.ok) {
       const data = await res.json();
       setReservations(data);
     }
   };
 
+  // 날짜와 시간, 구장 타입이 모두 일치하는지 확인
   const getReservation = (date: string, time: string) => {
     return reservations.find(
-      (r) => r.reservation_date === date && r.time_slot === time,
+      (r) =>
+        r.reservation_date === date &&
+        r.time_slot === time &&
+        (r.field_type === "B" || r.field_type === "b"), // 대소문자 방어 코드
     );
   };
 
   const handleCancel = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cancelId || !cancelPassword) return;
-
     const res = await fetch("/api/reservations/cancel", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: cancelId, password: cancelPassword }),
     });
-
     if (res.ok) {
-      alert("예약이 정상적으로 취소되었습니다.");
+      alert("취소되었습니다.");
       setCancelId(null);
       setCancelPassword("");
       fetchReservations();
@@ -71,28 +72,22 @@ export default function StatusPage() {
           >
             ← 메인으로
           </Link>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-800">
-            이번 주 풋살장 예약 현황 📅
-          </h1>
+          <h1 className="text-xl font-bold">풋살장 예약 현황</h1>
           <button
             onClick={fetchReservations}
-            className="text-blue-700 font-bold hover:underline"
+            className="text-blue-600 font-bold"
           >
             새로고침
           </button>
         </div>
 
-        {/* 취소 모달 */}
         {cancelId && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <form
               onSubmit={handleCancel}
-              className="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm"
+              className="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm mx-4"
             >
-              <h3 className="font-bold text-lg mb-4">예약 취소</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                설정한 비밀번호를 입력해주세요.
-              </p>
+              <h3 className="font-bold mb-4">예약 취소</h3>
               <input
                 type="password"
                 value={cancelPassword}
@@ -121,20 +116,20 @@ export default function StatusPage() {
         )}
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-4 bg-emerald-600 text-white font-bold">
+          <div className="p-4 bg-emerald-600 text-white font-bold text-center">
             B 풋살장
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-center border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-gray-100 border-b">
-                  <th className="p-3 border-r min-w-[120px] text-gray-600">
+                  <th className="p-3 border-r min-w-[120px] text-gray-500 text-sm">
                     시간대
                   </th>
                   {currentWeekDays.map((day) => (
                     <th
                       key={day.fullDate}
-                      className={`p-3 border-r ${day.isWeekend ? "text-red-500 bg-red-50" : "text-gray-700"}`}
+                      className={`p-3 border-r text-sm font-bold ${day.isWeekend ? "text-red-500 bg-red-50" : "text-gray-700"}`}
                     >
                       {day.display}
                     </th>
@@ -144,22 +139,20 @@ export default function StatusPage() {
               <tbody>
                 {ALL_SLOTS.map((slot) => (
                   <tr key={slot.time} className="border-b">
-                    <td className="p-3 border-r font-bold text-sm bg-gray-50 text-gray-500">
+                    <td className="p-3 border-r font-bold text-xs bg-gray-50 text-gray-400">
                       {slot.time}
                     </td>
                     {currentWeekDays.map((day) => {
-                      // 평일인데 주말 전용 시간대인 경우 처리
                       if (slot.isWeekendOnly && !day.isWeekend) {
                         return (
                           <td
                             key={day.fullDate}
-                            className="p-2 border-r bg-gray-100 text-gray-300 text-xs"
+                            className="p-2 border-r bg-gray-100/30 text-gray-200 text-[10px]"
                           >
                             운영 안함
                           </td>
                         );
                       }
-
                       const res = getReservation(day.fullDate, slot.time);
                       return (
                         <td
@@ -167,22 +160,23 @@ export default function StatusPage() {
                           className="p-2 border-r align-top h-24"
                         >
                           {res ? (
-                            <div className="bg-emerald-50 border border-emerald-200 p-2 rounded-lg h-full flex flex-col justify-center">
-                              <span className="font-bold text-emerald-800 text-sm">
+                            <div className="bg-emerald-50 border border-emerald-200 p-2 rounded-lg h-full flex flex-col justify-center shadow-sm">
+                              {/* 바뀐 DB 컬럼명 적용: club_name, user_name */}
+                              <span className="font-bold text-emerald-900 text-xs break-all leading-tight">
                                 {res.club_name}
                               </span>
-                              <span className="text-gray-600 text-xs mt-1">
+                              <span className="text-gray-600 text-[10px] mt-1">
                                 {res.user_name}
                               </span>
                               <button
                                 onClick={() => setCancelId(res.id)}
-                                className="mt-2 text-[10px] text-gray-400 hover:text-red-500 underline"
+                                className="mt-auto text-[9px] text-gray-400 hover:text-red-500 underline"
                               >
                                 취소
                               </button>
                             </div>
                           ) : (
-                            <div className="text-gray-200 text-xs flex items-center justify-center h-full">
+                            <div className="text-gray-200 text-[10px] flex items-center justify-center h-full">
                               비어있음
                             </div>
                           )}
