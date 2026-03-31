@@ -96,7 +96,7 @@ export default function Home() {
             href="/status"
             className="block w-full text-center bg-gray-200 text-gray-800 text-sm font-bold py-3 rounded-xl mt-2"
           >
-            이번 주 예약 현황 보기
+            예약 현황 보기
           </Link>
         </div>
       )}
