@@ -4,8 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getNextWeekDays } from "@/lib/utils";
 
-// 운동장 사용 가능 시간대 세팅
-const TIME_SLOTS = ["18:00-19:00", "19:00-20:00", "20:00-21:00", "21:00-22:00"];
+// 카톡 공지사항에 맞춘 평일 타임슬롯
+const TIME_SLOTS = [
+  "16:00~18:00 (0번)",
+  "18:00~20:00 (1번)",
+  "20:00~22:00 (2번)",
+];
 const FIELD_TYPE = "A";
 
 export default function AFieldReservation() {
@@ -15,7 +19,14 @@ export default function AFieldReservation() {
 
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
-  const [userInfo, setUserInfo] = useState("");
+
+  // 폼 데이터 상태 관리
+  const [formData, setFormData] = useState({
+    userName: "",
+    clubName: "",
+    contact: "",
+    password: "",
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -23,7 +34,6 @@ export default function AFieldReservation() {
     fetchReservedSlots();
   }, []);
 
-  // API를 통해 이미 예약된 내역 가져오기
   const fetchReservedSlots = async () => {
     const res = await fetch(`/api/reservations?fieldType=${FIELD_TYPE}`);
     if (res.ok) {
@@ -32,9 +42,21 @@ export default function AFieldReservation() {
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
   const handleReservation = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDate || !selectedTime || !userInfo) return;
+    if (
+      !selectedDate ||
+      !selectedTime ||
+      !formData.userName ||
+      !formData.clubName ||
+      !formData.contact ||
+      !formData.password
+    )
+      return;
 
     setIsSubmitting(true);
     try {
@@ -45,7 +67,10 @@ export default function AFieldReservation() {
           field_type: FIELD_TYPE,
           reservation_date: selectedDate,
           time_slot: selectedTime,
-          user_info: userInfo,
+          user_name: formData.userName,
+          club_name: formData.clubName,
+          contact: formData.contact,
+          password: formData.password,
         }),
       });
 
@@ -53,12 +78,11 @@ export default function AFieldReservation() {
 
       if (res.ok) {
         alert("예약이 완료되었습니다! 🎉");
-        router.push("/");
+        router.push("/status"); // 예약 완료 후 현황(달력) 페이지로 이동
       } else {
-        // 중복 예약 발생 시 (서버에서 튕겨냈을 때)
         alert(data.error);
-        fetchReservedSlots(); // 최신 예약 상태로 즉시 갱신
-        setSelectedTime(""); // 선택했던 시간 초기화
+        fetchReservedSlots();
+        setSelectedTime("");
       }
     } catch (error) {
       alert("서버 통신 오류가 발생했습니다.");
@@ -67,7 +91,6 @@ export default function AFieldReservation() {
     }
   };
 
-  // 특정 날짜/시간이 이미 예약되었는지 판별하는 함수
   const isBooked = (date: string, time: string) => {
     return reservedSlots.some(
       (slot) => slot.reservation_date === date && slot.time_slot === time,
@@ -85,7 +108,7 @@ export default function AFieldReservation() {
           {/* 1. 날짜 선택 */}
           <div>
             <h2 className="text-base font-bold text-gray-700 mb-3">
-              1. 다음 주 요일 선택
+              1. 요일 선택
             </h2>
             <div className="grid grid-cols-5 gap-2">
               {availableDays.map((date) => (
@@ -98,8 +121,8 @@ export default function AFieldReservation() {
                   }}
                   className={`p-3 rounded-lg border font-medium text-sm transition-all ${
                     selectedDate === date
-                      ? "bg-blue-600 text-white border-blue-600 shadow-md"
-                      : "bg-white text-gray-600 hover:bg-blue-50 hover:border-blue-200"
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white text-gray-600 hover:bg-blue-50"
                   }`}
                 >
                   {date.substring(5)}
@@ -108,13 +131,13 @@ export default function AFieldReservation() {
             </div>
           </div>
 
-          {/* 2. 시간 선택 (날짜를 선택해야 보임) */}
+          {/* 2. 시간 선택 */}
           {selectedDate && (
-            <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+            <div>
               <h2 className="text-base font-bold text-gray-700 mb-3">
                 2. 시간 선택
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {TIME_SLOTS.map((time) => {
                   const booked = isBooked(selectedDate, time);
                   return (
@@ -125,10 +148,10 @@ export default function AFieldReservation() {
                       onClick={() => setSelectedTime(time)}
                       className={`p-3 rounded-lg border text-sm font-semibold transition-all ${
                         booked
-                          ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200 line-through"
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed line-through"
                           : selectedTime === time
-                            ? "bg-blue-600 text-white border-blue-600 shadow-md"
-                            : "bg-white text-gray-700 hover:border-blue-500 hover:bg-blue-50"
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-white text-gray-700 hover:border-blue-500"
                       }`}
                     >
                       {time}
@@ -139,28 +162,53 @@ export default function AFieldReservation() {
             </div>
           )}
 
-          {/* 3. 예약자 정보 (시간까지 선택해야 보임) */}
+          {/* 3. 예약자 정보 입력 (칸 4개로 분리) */}
           {selectedTime && (
-            <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="space-y-4">
               <h2 className="text-base font-bold text-gray-700 mb-3">
-                3. 예약자 정보
+                3. 예약 정보 입력
               </h2>
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  name="clubName"
+                  placeholder="동아리명"
+                  onChange={handleChange}
+                  required
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="text"
+                  name="userName"
+                  placeholder="예약자 이름"
+                  onChange={handleChange}
+                  required
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
               <input
                 type="text"
-                placeholder="이름 (학번 또는 연락처)"
-                value={userInfo}
-                onChange={(e) => setUserInfo(e.target.value)}
-                className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                name="contact"
+                placeholder="연락처 (010-XXXX-XXXX)"
+                onChange={handleChange}
                 required
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="password"
+                name="password"
+                placeholder="예약 취소용 비밀번호 (기억해주세요!)"
+                onChange={handleChange}
+                required
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
           )}
 
-          {/* 제출 버튼 */}
           <button
             type="submit"
-            disabled={!selectedTime || !userInfo || isSubmitting}
-            className="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors mt-8 text-lg"
+            disabled={!selectedTime || isSubmitting}
+            className="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-lg disabled:bg-gray-300 mt-8"
           >
             {isSubmitting ? "예약 처리 중..." : "예약 확정하기"}
           </button>

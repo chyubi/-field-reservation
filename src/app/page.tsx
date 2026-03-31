@@ -70,6 +70,7 @@ export default function Home() {
               현재 예약 오픈 중! 🔓
             </span>
           </div>
+          <Link href="/status">예약 현황 달력 보기</Link>
           <Link
             href="/a-field"
             className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-5 rounded-xl shadow-md transition-colors"
