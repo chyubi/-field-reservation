@@ -52,10 +52,13 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  // ... (상단 import 생략)
+  // 중략: 타이머 로직은 유지하되 텍스트만 '풋살장'으로 변경
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
       <h1 className="text-3xl font-bold mb-8 text-center text-gray-800">
-        대학교 운동장 예약 시스템
+        풋살장 예약 시스템
       </h1>
 
       {!unlocked ? (
@@ -71,35 +74,29 @@ export default function Home() {
           </div>
           <Link
             href="/status"
-            className="block mt-6 text-blue-500 underline text-sm hover:text-blue-700"
+            className="block mt-6 bg-blue-600 text-white py-4 rounded-xl font-bold"
           >
-            이번 주 예약 현황 달력 보기
+            이번 주 풋살장 예약 현황 보기
           </Link>
         </div>
       ) : (
         <div className="w-full max-w-md grid gap-5">
           <div className="text-center mb-2">
-            <span className="bg-green-100 text-green-700 px-5 py-2 rounded-full font-bold text-sm animate-pulse border border-green-200">
+            <span className="bg-green-100 text-green-700 px-5 py-2 rounded-full font-bold text-sm animate-pulse">
               현재 예약 오픈 중! (22:00 마감) 🔓
             </span>
           </div>
           <Link
-            href="/a-field"
-            className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-5 rounded-xl shadow-md transition-colors"
-          >
-            A 대운동장 예약하기
-          </Link>
-          <Link
             href="/b-field"
-            className="block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-bold py-5 rounded-xl shadow-md transition-colors"
+            className="block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-bold py-5 rounded-xl shadow-md"
           >
-            B 풋살장 예약하기
+            풋살장 예약하기
           </Link>
           <Link
             href="/status"
-            className="block w-full text-center bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-bold py-3 rounded-xl transition-colors mt-2"
+            className="block w-full text-center bg-gray-200 text-gray-800 text-sm font-bold py-3 rounded-xl mt-2"
           >
-            예약 현황 달력 보기
+            이번 주 예약 현황 보기
           </Link>
         </div>
       )}

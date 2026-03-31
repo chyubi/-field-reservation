@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getNextWeekDays } from "@/lib/utils";
+import { getCurrentWeekDays } from "@/lib/utils"; // 1. 임포트 추가
 import Link from "next/link";
 
 // 달력 Y축에 출력될 전체 타임슬롯 정의
@@ -16,29 +16,27 @@ const ALL_SLOTS = [
 
 export default function StatusPage() {
   const [reservations, setReservations] = useState<any[]>([]);
-  const [availableDays, setAvailableDays] = useState<any[]>([]);
+  const [currentWeekDays, setCurrentWeekDays] = useState<any[]>([]);
   const [cancelId, setCancelId] = useState<string | null>(null);
   const [cancelPassword, setCancelPassword] = useState("");
 
   useEffect(() => {
-    setAvailableDays(getNextWeekDays());
+    // 2. 초기 렌더링 시 이번 주 날짜 세팅 및 예약 데이터 호출
+    setCurrentWeekDays(getCurrentWeekDays());
     fetchReservations();
   }, []);
 
   const fetchReservations = async () => {
-    const res = await fetch("/api/reservations");
+    const res = await fetch("/api/reservations?fieldType=B"); // 풋살장 데이터만 호출
     if (res.ok) {
       const data = await res.json();
       setReservations(data);
     }
   };
 
-  const getReservation = (fieldType: string, date: string, time: string) => {
+  const getReservation = (date: string, time: string) => {
     return reservations.find(
-      (r) =>
-        r.field_type === fieldType &&
-        r.reservation_date === date &&
-        r.time_slot === time,
+      (r) => r.reservation_date === date && r.time_slot === time,
     );
   };
 
@@ -67,34 +65,33 @@ export default function StatusPage() {
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-[1200px] mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-300"
-            >
-              ← 메인으로
-            </Link>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-800">
-              이번 주 예약 현황 📅
-            </h1>
-          </div>
+          <Link
+            href="/"
+            className="bg-gray-200 px-4 py-2 rounded-lg text-sm font-bold"
+          >
+            ← 메인으로
+          </Link>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-800">
+            이번 주 풋살장 예약 현황 📅
+          </h1>
           <button
             onClick={fetchReservations}
-            className="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg text-sm font-bold"
+            className="text-blue-700 font-bold hover:underline"
           >
             새로고침
           </button>
         </div>
 
+        {/* 취소 모달 */}
         {cancelId && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <form
               onSubmit={handleCancel}
-              className="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm mx-4"
+              className="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm"
             >
               <h3 className="font-bold text-lg mb-4">예약 취소</h3>
               <p className="text-sm text-gray-600 mb-4">
-                예약 시 설정한 비밀번호를 입력해주세요.
+                설정한 비밀번호를 입력해주세요.
               </p>
               <input
                 type="password"
@@ -108,7 +105,7 @@ export default function StatusPage() {
                 <button
                   type="button"
                   onClick={() => setCancelId(null)}
-                  className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg"
+                  className="flex-1 bg-gray-200 py-2 rounded-lg"
                 >
                   닫기
                 </button>
@@ -123,92 +120,81 @@ export default function StatusPage() {
           </div>
         )}
 
-        {["A", "B"].map((field) => (
-          <div
-            key={field}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-12"
-          >
-            <div
-              className={`p-4 text-white font-bold text-lg ${field === "A" ? "bg-blue-600" : "bg-emerald-600"}`}
-            >
-              {field === "A" ? "A 대운동장" : "B 풋살장"}
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-center border-collapse min-w-[800px]">
-                <thead>
-                  <tr className="bg-gray-100 border-b">
-                    <th className="p-3 border-r min-w-[120px] text-gray-600 font-bold">
-                      시간대
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-4 bg-emerald-600 text-white font-bold">
+            B 풋살장
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-center border-collapse min-w-[800px]">
+              <thead>
+                <tr className="bg-gray-100 border-b">
+                  <th className="p-3 border-r min-w-[120px] text-gray-600">
+                    시간대
+                  </th>
+                  {currentWeekDays.map((day) => (
+                    <th
+                      key={day.fullDate}
+                      className={`p-3 border-r ${day.isWeekend ? "text-red-500 bg-red-50" : "text-gray-700"}`}
+                    >
+                      {day.display}
                     </th>
-                    {availableDays.map((day) => (
-                      <th
-                        key={day.fullDate}
-                        className={`p-3 border-r font-bold ${day.isWeekend ? "text-red-500 bg-red-50" : "text-gray-700"}`}
-                      >
-                        {day.display}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {ALL_SLOTS.map((slot) => (
-                    <tr key={slot.time} className="border-b">
-                      <td className="p-3 border-r font-bold text-sm bg-gray-50 text-gray-600">
-                        {slot.time}
-                      </td>
-                      {availableDays.map((day) => {
-                        // 평일인데 주말 전용 오전 시간대인 경우 회색 블록 처리
-                        if (slot.isWeekendOnly && !day.isWeekend) {
-                          return (
-                            <td
-                              key={day.fullDate}
-                              className="p-2 border-r bg-gray-100/50 text-gray-300 text-xs"
-                            >
-                              운영 안함
-                            </td>
-                          );
-                        }
-
-                        const res = getReservation(
-                          field,
-                          day.fullDate,
-                          slot.time,
-                        );
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {ALL_SLOTS.map((slot) => (
+                  <tr key={slot.time} className="border-b">
+                    <td className="p-3 border-r font-bold text-sm bg-gray-50 text-gray-500">
+                      {slot.time}
+                    </td>
+                    {currentWeekDays.map((day) => {
+                      // 평일인데 주말 전용 시간대인 경우 처리
+                      if (slot.isWeekendOnly && !day.isWeekend) {
                         return (
                           <td
                             key={day.fullDate}
-                            className="p-2 border-r align-top"
+                            className="p-2 border-r bg-gray-100 text-gray-300 text-xs"
                           >
-                            {res ? (
-                              <div className="bg-blue-50 border border-blue-200 p-2 rounded-lg flex flex-col items-center">
-                                <span className="font-bold text-blue-800 text-sm">
-                                  {res.club_name}
-                                </span>
-                                <span className="text-gray-600 text-xs mt-1">
-                                  {res.user_name}
-                                </span>
-                                <button
-                                  onClick={() => setCancelId(res.id)}
-                                  className="mt-2 text-[10px] text-gray-400 hover:text-red-500 underline"
-                                >
-                                  취소
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="text-gray-300 text-xs py-2">
-                                비어있음
-                              </div>
-                            )}
+                            운영 안함
                           </td>
                         );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      }
+
+                      const res = getReservation(day.fullDate, slot.time);
+                      return (
+                        <td
+                          key={day.fullDate}
+                          className="p-2 border-r align-top h-24"
+                        >
+                          {res ? (
+                            <div className="bg-emerald-50 border border-emerald-200 p-2 rounded-lg h-full flex flex-col justify-center">
+                              <span className="font-bold text-emerald-800 text-sm">
+                                {res.club_name}
+                              </span>
+                              <span className="text-gray-600 text-xs mt-1">
+                                {res.user_name}
+                              </span>
+                              <button
+                                onClick={() => setCancelId(res.id)}
+                                className="mt-2 text-[10px] text-gray-400 hover:text-red-500 underline"
+                              >
+                                취소
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="text-gray-200 text-xs flex items-center justify-center h-full">
+                              비어있음
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );
