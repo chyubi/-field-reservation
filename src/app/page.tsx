@@ -22,16 +22,23 @@ export default function Home() {
         setCountdown("");
       } else {
         setUnlocked(false);
-        // 다음 오픈 시간(일요일 21시) 계산
         const now = new Date();
-        let nextSunday = setSeconds(
-          setMinutes(setHours(setDay(now, 0), 21), 0),
+        // 다음 오픈 시간: 일요일 20시
+        let nextSundayOpen = setSeconds(
+          setMinutes(setHours(setDay(now, 0), 20), 0),
           0,
         );
-        if (now > nextSunday) {
-          nextSunday.setDate(nextSunday.getDate() + 7);
+        let nextSundayClose = setSeconds(
+          setMinutes(setHours(setDay(now, 0), 22), 0),
+          0,
+        );
+
+        // 이미 이번 주 일요일 밤 10시가 지났다면 다음 주 일요일로 타겟 변경
+        if (now > nextSundayClose) {
+          nextSundayOpen.setDate(nextSundayOpen.getDate() + 7);
         }
-        const diff = Math.max(0, differenceInSeconds(nextSunday, now));
+
+        const diff = Math.max(0, differenceInSeconds(nextSundayOpen, now));
         const days = Math.floor(diff / (3600 * 24));
         const hours = Math.floor((diff % (3600 * 24)) / 3600);
         const minutes = Math.floor((diff % 3600) / 60);
@@ -57,20 +64,25 @@ export default function Home() {
             예약 오픈 전입니다 🔒
           </h2>
           <p className="text-gray-500 mb-6 text-sm">
-            매주 일요일 21:00에 다음 주 예약이 오픈됩니다.
+            매주 일요일 20:00 ~ 22:00에 오픈됩니다.
           </p>
           <div className="text-2xl font-mono font-bold bg-gray-100 text-gray-800 p-4 rounded-lg">
             {countdown}
           </div>
+          <Link
+            href="/status"
+            className="block mt-6 text-blue-500 underline text-sm hover:text-blue-700"
+          >
+            이번 주 예약 현황 달력 보기
+          </Link>
         </div>
       ) : (
         <div className="w-full max-w-md grid gap-5">
           <div className="text-center mb-2">
             <span className="bg-green-100 text-green-700 px-5 py-2 rounded-full font-bold text-sm animate-pulse border border-green-200">
-              현재 예약 오픈 중! 🔓
+              현재 예약 오픈 중! (22:00 마감) 🔓
             </span>
           </div>
-          <Link href="/status">예약 현황 달력 보기</Link>
           <Link
             href="/a-field"
             className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-5 rounded-xl shadow-md transition-colors"
@@ -82,6 +94,12 @@ export default function Home() {
             className="block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-bold py-5 rounded-xl shadow-md transition-colors"
           >
             B 풋살장 예약하기
+          </Link>
+          <Link
+            href="/status"
+            className="block w-full text-center bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-bold py-3 rounded-xl transition-colors mt-2"
+          >
+            예약 현황 달력 보기
           </Link>
         </div>
       )}

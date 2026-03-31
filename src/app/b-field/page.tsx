@@ -4,23 +4,26 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getNextWeekDays } from "@/lib/utils";
 
-// 카톡 공지사항에 맞춘 평일 타임슬롯
-const TIME_SLOTS = [
-  "16:00~18:00 (0번)",
-  "18:00~20:00 (1번)",
-  "20:00~22:00 (2번)",
+// 평일/주말 시간대 분리
+const WEEKDAY_SLOTS = ["16:00~18:00", "18:00~20:00", "20:00~22:00"];
+const WEEKEND_SLOTS = [
+  "10:00~12:00",
+  "12:00~14:00",
+  "14:00~16:00",
+  "16:00~18:00",
+  "18:00~20:00",
+  "20:00~22:00",
 ];
-const FIELD_TYPE = "A";
+const FIELD_TYPE = "B";
 
 export default function AFieldReservation() {
   const router = useRouter();
-  const [availableDays, setAvailableDays] = useState<string[]>([]);
+  const [availableDays, setAvailableDays] = useState<any[]>([]);
   const [reservedSlots, setReservedSlots] = useState<any[]>([]);
 
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDayObj, setSelectedDayObj] = useState<any>(null);
   const [selectedTime, setSelectedTime] = useState("");
 
-  // 폼 데이터 상태 관리
   const [formData, setFormData] = useState({
     userName: "",
     clubName: "",
@@ -49,7 +52,7 @@ export default function AFieldReservation() {
   const handleReservation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (
-      !selectedDate ||
+      !selectedDayObj ||
       !selectedTime ||
       !formData.userName ||
       !formData.clubName ||
@@ -65,7 +68,7 @@ export default function AFieldReservation() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           field_type: FIELD_TYPE,
-          reservation_date: selectedDate,
+          reservation_date: selectedDayObj.fullDate,
           time_slot: selectedTime,
           user_name: formData.userName,
           club_name: formData.clubName,
@@ -78,14 +81,14 @@ export default function AFieldReservation() {
 
       if (res.ok) {
         alert("예약이 완료되었습니다! 🎉");
-        router.push("/status"); // 예약 완료 후 현황(달력) 페이지로 이동
+        router.push("/status");
       } else {
         alert(data.error);
         fetchReservedSlots();
         setSelectedTime("");
       }
     } catch (error) {
-      alert("서버 통신 오류가 발생했습니다.");
+      alert("서버 오류가 발생했습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -97,49 +100,55 @@ export default function AFieldReservation() {
     );
   };
 
+  // 선택된 날짜가 주말이면 주말 배열을, 아니면 평일 배열을 렌더링
+  const currentSlots = selectedDayObj?.isWeekend
+    ? WEEKEND_SLOTS
+    : WEEKDAY_SLOTS;
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <h1 className="text-2xl font-bold mb-8 text-center text-gray-800">
-          A 대운동장 예약
+          B 풋살장 예약
         </h1>
 
         <form onSubmit={handleReservation} className="space-y-8">
-          {/* 1. 날짜 선택 */}
           <div>
             <h2 className="text-base font-bold text-gray-700 mb-3">
               1. 요일 선택
             </h2>
-            <div className="grid grid-cols-5 gap-2">
-              {availableDays.map((date) => (
+            {/* 7일 표시를 위해 cols-4 나 cols-7 사용 */}
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+              {availableDays.map((day) => (
                 <button
-                  key={date}
+                  key={day.fullDate}
                   type="button"
                   onClick={() => {
-                    setSelectedDate(date);
+                    setSelectedDayObj(day);
                     setSelectedTime("");
                   }}
                   className={`p-3 rounded-lg border font-medium text-sm transition-all ${
-                    selectedDate === date
+                    selectedDayObj?.fullDate === day.fullDate
                       ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-600 hover:bg-blue-50"
+                      : day.isWeekend
+                        ? "bg-red-50 text-red-600 hover:bg-red-100"
+                        : "bg-white text-gray-600 hover:bg-blue-50"
                   }`}
                 >
-                  {date.substring(5)}
+                  {day.display}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* 2. 시간 선택 */}
-          {selectedDate && (
+          {selectedDayObj && (
             <div>
               <h2 className="text-base font-bold text-gray-700 mb-3">
-                2. 시간 선택
+                2. 시간 선택 {selectedDayObj.isWeekend && "(주말)"}
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {TIME_SLOTS.map((time) => {
-                  const booked = isBooked(selectedDate, time);
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {currentSlots.map((time) => {
+                  const booked = isBooked(selectedDayObj.fullDate, time);
                   return (
                     <button
                       key={time}
@@ -162,7 +171,6 @@ export default function AFieldReservation() {
             </div>
           )}
 
-          {/* 3. 예약자 정보 입력 (칸 4개로 분리) */}
           {selectedTime && (
             <div className="space-y-4">
               <h2 className="text-base font-bold text-gray-700 mb-3">
@@ -197,7 +205,7 @@ export default function AFieldReservation() {
               <input
                 type="password"
                 name="password"
-                placeholder="예약 취소용 비밀번호 (기억해주세요!)"
+                placeholder="예약 취소용 비밀번호"
                 onChange={handleChange}
                 required
                 className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"

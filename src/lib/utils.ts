@@ -1,5 +1,6 @@
 import {
   isAfter,
+  isBefore,
   setDay,
   setHours,
   setMinutes,
@@ -8,30 +9,34 @@ import {
   addWeeks,
   format,
 } from "date-fns";
+import { ko } from "date-fns/locale"; // 한국어 요일 지원
 
-// 1. 일요일 21시 예약 락(Lock) 해제 여부 확인
+// 1. 일요일 20:00 ~ 22:00 사이인지 체크 (락 해제 조건)
 export function isReservationUnlocked(): boolean {
   const now = new Date();
 
-  // 이번 주 일요일(0) 21:00:00 객체 생성
-  const sunday21 = setSeconds(setMinutes(setHours(setDay(now, 0), 21), 0), 0);
+  // 이번 주 일요일(0) 20:00:00 및 22:00:00 세팅
+  const sunday20 = setSeconds(setMinutes(setHours(setDay(now, 0), 20), 0), 0);
+  const sunday22 = setSeconds(setMinutes(setHours(setDay(now, 0), 22), 0), 0);
 
-  // 현재 시간이 이번 주 일요일 21시 이후인지 반환 (true면 락 해제)
-  return isAfter(now, sunday21);
+  return isAfter(now, sunday20) && isBefore(now, sunday22);
 }
 
-// 2. 예약 가능한 다음 주 월~금 날짜 배열 구하기 (['2026-04-13', '2026-04-14', ...])
-export function getNextWeekDays(): string[] {
+// 2. 다음 주 월~일 (7일) 날짜 배열 생성
+export function getNextWeekDays() {
   const now = new Date();
-  // 다음 주 월요일 시작일 구하기 (weekStartsOn: 1은 월요일을 한 주의 시작으로 봄)
+  // 다음 주 월요일 구하기
   const nextWeekStart = startOfWeek(addWeeks(now, 1), { weekStartsOn: 1 });
 
-  const days: string[] = [];
-  // 월(0) 부터 금(4) 까지 5일치 날짜 생성
-  for (let i = 0; i < 5; i++) {
+  const days = [];
+  for (let i = 0; i < 7; i++) {
     const date = new Date(nextWeekStart);
     date.setDate(date.getDate() + i);
-    days.push(format(date, "yyyy-MM-dd"));
+    days.push({
+      fullDate: format(date, "yyyy-MM-dd"), // DB 저장용 (예: 2026-04-06)
+      display: format(date, "MM/dd (EE)", { locale: ko }), // 화면 표시용 (예: 04/06 (월))
+      isWeekend: i >= 5, // 토(5), 일(6) 판별
+    });
   }
   return days;
 }
