@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
+// ★ 이 줄을 추가하세요! (빌드 시 무조건 실시간 렌더링하도록 강제)
+export const dynamic = "force-dynamic";
+
 // [GET] 관리자용 전체 예약 내역 조회 (날짜 및 시간순 정렬)
 export async function GET() {
   const { data, error } = await supabase
