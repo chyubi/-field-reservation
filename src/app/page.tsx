@@ -58,7 +58,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
       <h1 className="text-3xl font-bold mb-8 text-center text-gray-800">
-        풋살장 예약 시스템
+        금오공대 풋살장 예약 시스템
       </h1>
 
       {!unlocked ? (
