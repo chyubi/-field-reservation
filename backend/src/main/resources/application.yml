@@ -1,0 +1,39 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/field_reservation}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+app:
+  zone-id: Asia/Seoul
+  frontend-origin: ${FRONTEND_ORIGIN:http://localhost:3000}
+  allowed-clubs:
+    - Pvc
+    - 챌린저
+    - 싸이클론
+    - 네스
+    - 발로차
+    - 아키
+    - 하나로
+    - 맥스
+    - ecst
+    - Esc
+    - 이글스
+    - 바이퍼
+  reservation-window:
+    open-day: SUNDAY
+    open-time: "20:00"
+    close-time: "22:00"
+  admin:
+    token: ${ADMIN_TOKEN:change-me-admin-token}
+    password-hash: ${ADMIN_PASSWORD_HASH:$2a$10$7EqJtq98hPqEX7fNZaFWoOHiH6G/jK6wsm0p6rW7XG8DqRL3O89m6}
