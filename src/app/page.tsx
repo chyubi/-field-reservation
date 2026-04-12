@@ -18,6 +18,8 @@ const ALLOWED_CLUBS = [
   "이글스",
   "바이퍼",
   "소프트",
+  "코스트",
+  "볼케이노",
 ];
 
 export default function HomePage() {
