@@ -4,6 +4,22 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { apiRequest, ReservationPolicy } from "@/lib/api";
 
+const ALLOWED_CLUBS = [
+  "Pvc",
+  "챌린저",
+  "싸이클론",
+  "네스",
+  "발로차",
+  "아키",
+  "하나로",
+  "맥스",
+  "ecst",
+  "Esc",
+  "이글스",
+  "바이퍼",
+  "소프트",
+];
+
 export default function HomePage() {
   const [unlocked, setUnlocked] = useState(false);
 
@@ -84,6 +100,30 @@ export default function HomePage() {
             </Link>
           </div>
         )}
+
+        <div className="mt-6 rounded-3xl border border-emerald-100 bg-white p-5 text-left shadow-sm">
+          <h3 className="mb-3 text-sm font-extrabold text-gray-800">
+            예약 안내
+          </h3>
+          <p className="text-sm leading-6 text-gray-600">
+            현재는 아래 허용 동아리의 정확한 동아리명을 입력한 경우에만
+            예약할 수 있습니다.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {ALLOWED_CLUBS.map((club) => (
+              <span
+                key={club}
+                className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700"
+              >
+                {club}
+              </span>
+            ))}
+          </div>
+          <p className="mt-4 text-sm leading-6 text-gray-500">
+            이 부분은 추후 로그인 기반 예약 방식으로 변경할 예정이며,
+            빠른 시일 내에 예약 편의성을 더 높이겠습니다.
+          </p>
+        </div>
       </div>
     </div>
   );
