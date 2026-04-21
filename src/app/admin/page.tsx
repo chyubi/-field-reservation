@@ -8,6 +8,8 @@ export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [adminToken, setAdminToken] = useState("");
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [allowedClubs, setAllowedClubs] = useState<string[]>([]);
+  const [newClubName, setNewClubName] = useState("");
 
   // 관리자 접속 시 자동으로 데이터 불러오기
   useEffect(() => {
@@ -21,6 +23,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAuthenticated && adminToken) {
       void fetchReservations(adminToken);
+      void fetchAllowedClubs(adminToken);
     }
   }, [isAuthenticated, adminToken]);
 
@@ -63,6 +66,23 @@ export default function AdminPage() {
     }
   };
 
+  const fetchAllowedClubs = async (token = adminToken) => {
+    try {
+      const data = await apiRequest<string[]>("/api/v1/admin/allowed-clubs", {
+        headers: {
+          "X-Admin-Token": token,
+        },
+      });
+      setAllowedClubs(data);
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "허용 동아리 목록을 불러오지 못했습니다.",
+      );
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm("정말 이 예약을 삭제하시겠습니까? (복구 불가)")) return;
 
@@ -77,6 +97,50 @@ export default function AdminPage() {
       void fetchReservations();
     } catch (error) {
       alert(error instanceof Error ? error.message : "삭제 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handleAddClub = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newClubName.trim()) return;
+
+    try {
+      const data = await apiRequest<string[]>("/api/v1/admin/allowed-clubs", {
+        method: "POST",
+        headers: {
+          "X-Admin-Token": adminToken,
+        },
+        body: JSON.stringify({ clubName: newClubName }),
+      });
+      setAllowedClubs(data);
+      setNewClubName("");
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "허용 동아리 추가 중 오류가 발생했습니다.",
+      );
+    }
+  };
+
+  const handleDeleteClub = async (clubName: string) => {
+    if (!confirm(`허용 동아리 '${clubName}'를 삭제하시겠습니까?`)) return;
+
+    try {
+      const data = await apiRequest<string[]>("/api/v1/admin/allowed-clubs", {
+        method: "DELETE",
+        headers: {
+          "X-Admin-Token": adminToken,
+        },
+        body: JSON.stringify({ clubName }),
+      });
+      setAllowedClubs(data);
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "허용 동아리 삭제 중 오류가 발생했습니다.",
+      );
     }
   };
 
@@ -117,11 +181,54 @@ export default function AdminPage() {
             예약 관리 대시보드
           </h1>
           <button
-            onClick={() => void fetchReservations()}
+            onClick={() => {
+              void fetchReservations();
+              void fetchAllowedClubs();
+            }}
             className="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-semibold hover:bg-blue-200"
           >
             새로고침
           </button>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-gray-800">허용 동아리 관리</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                예약 가능한 동아리를 추가하거나 제거할 수 있습니다.
+              </p>
+            </div>
+            <form onSubmit={handleAddClub} className="flex gap-2">
+              <input
+                type="text"
+                value={newClubName}
+                onChange={(e) => setNewClubName(e.target.value)}
+                placeholder="예: 엔트로피"
+                className="w-52 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                required
+              />
+              <button
+                type="submit"
+                className="bg-emerald-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-emerald-700"
+              >
+                추가
+              </button>
+            </form>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {allowedClubs.map((club) => (
+              <button
+                key={club}
+                type="button"
+                onClick={() => handleDeleteClub(club)}
+                className="rounded-full bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-red-50 hover:text-red-600"
+                title="클릭해서 삭제"
+              >
+                {club} ×
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">

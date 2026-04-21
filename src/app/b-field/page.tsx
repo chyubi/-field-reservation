@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { apiRequest, Reservation } from "@/lib/api";
+import { apiRequest, Reservation, ReservationPolicy } from "@/lib/api";
 import { getNextWeekDays } from "@/lib/utils";
 
 // 평일/주말 시간대 분리
@@ -21,6 +21,7 @@ export default function AFieldReservation() {
   const router = useRouter();
   const [availableDays, setAvailableDays] = useState<any[]>([]);
   const [reservedSlots, setReservedSlots] = useState<Reservation[]>([]);
+  const [allowedClubs, setAllowedClubs] = useState<string[]>([]);
 
   const [selectedDayObj, setSelectedDayObj] = useState<any>(null);
   const [selectedTime, setSelectedTime] = useState("");
@@ -36,6 +37,7 @@ export default function AFieldReservation() {
   useEffect(() => {
     setAvailableDays(getNextWeekDays());
     void fetchReservedSlots();
+    void fetchAllowedClubs();
   }, []);
 
   const fetchReservedSlots = async () => {
@@ -50,6 +52,15 @@ export default function AFieldReservation() {
           ? error.message
           : "예약 현황을 불러오지 못했습니다.",
       );
+    }
+  };
+
+  const fetchAllowedClubs = async () => {
+    try {
+      const policy = await apiRequest<ReservationPolicy>("/api/v1/reservation-policy");
+      setAllowedClubs(policy.allowedClubs);
+    } catch {
+      setAllowedClubs([]);
     }
   };
 
@@ -177,6 +188,12 @@ export default function AFieldReservation() {
               <h2 className="text-base font-bold text-gray-700 mb-3">
                 3. 예약 정보 입력
               </h2>
+              <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                허용 동아리명만 예약 가능합니다.
+                {allowedClubs.length > 0
+                  ? ` 현재 등록: ${allowedClubs.join(", ")}`
+                  : " 현재 허용 동아리 목록을 불러오는 중입니다."}
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <input
                   type="text"

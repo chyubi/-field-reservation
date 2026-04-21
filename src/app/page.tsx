@@ -4,26 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { apiRequest, ReservationPolicy } from "@/lib/api";
 
-const ALLOWED_CLUBS = [
-  "Pvc",
-  "챌린저",
-  "싸이클론",
-  "네스",
-  "발로차",
-  "아키",
-  "하나로",
-  "맥스",
-  "ecst",
-  "Esc",
-  "이글스",
-  "바이퍼",
-  "소프트",
-  "코스트",
-  "볼케이노",
-];
-
 export default function HomePage() {
   const [unlocked, setUnlocked] = useState(false);
+  const [allowedClubs, setAllowedClubs] = useState<string[]>([]);
+  const [allowedClubCount, setAllowedClubCount] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -33,10 +17,14 @@ export default function HomePage() {
         const policy = await apiRequest<ReservationPolicy>("/api/v1/reservation-policy");
         if (mounted) {
           setUnlocked(policy.unlocked);
+          setAllowedClubs(policy.allowedClubs);
+          setAllowedClubCount(policy.allowedClubCount);
         }
       } catch {
         if (mounted) {
           setUnlocked(false);
+          setAllowedClubs([]);
+          setAllowedClubCount(0);
         }
       }
     };
@@ -111,8 +99,11 @@ export default function HomePage() {
             현재는 아래 허용 동아리의 정확한 동아리명을 입력한 경우에만
             예약할 수 있습니다.
           </p>
+          <p className="mt-2 text-xs font-semibold text-emerald-700">
+            현재 허용 동아리 {allowedClubCount}개
+          </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            {ALLOWED_CLUBS.map((club) => (
+            {allowedClubs.map((club) => (
               <span
                 key={club}
                 className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700"

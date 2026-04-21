@@ -28,6 +28,7 @@ export type ReservationPolicy = {
   openTime: string;
   closeTime: string;
   allowedClubs: string[];
+  allowedClubCount: number;
 };
 
 export type AdminLoginResponse = {
